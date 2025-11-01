@@ -25,14 +25,14 @@ spec:
               - |
                 cd ~;
                 pip install grpcio grpcio-tools;
-                pip install git+https://github.com/Tianwen10532/dtw-actor.git;
+                pip install git+https://github.com/Tianwen10532/dtw.git;
 
                 read -r -d '' SCRIPT << EOM
                 import grpc
                 from concurrent import futures
                 import ray
-                from dtwactor.servicer import InvokerServicer
-                import dtwactor.grpc.invoke.invoke_pb2_grpc as invoke_pb2_grpc
+                from dtw.proxy.grpc.servicer import InvokerServicer
+                import dtw.grpc.invoke.invoke_pb2_grpc as invoke_pb2_grpc
                 @ray.remote
                 class AddWorker:
                     def __init__(self, accu:int):
@@ -97,7 +97,7 @@ spec:
             args:
               - |
                 pip install grpcio grpcio-tools;
-                pip install git+https://github.com/Tianwen10532/dtw-actor.git;
+                pip install git+https://github.com/Tianwen10532/dtw.git;
                 ulimit -n 65536; echo worker; $KUBERAY_GEN_RAY_START_CMD
                 tail -f /dev/null
             resources:
