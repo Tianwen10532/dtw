@@ -1,0 +1,6 @@
+setup.py
+dtw/__init__.py
+dtw.egg-info/PKG-INFO
+dtw.egg-info/SOURCES.txt
+dtw.egg-info/dependency_links.txt
+dtw.egg-info/top_level.txt
