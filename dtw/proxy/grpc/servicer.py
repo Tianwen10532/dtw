@@ -14,9 +14,7 @@ class InvokerServicer(invoke_pb2_grpc.InvokerServicer):
         self.actor_cls = actor_cls
         self.ray_actor_handle=None
         self.has_started=False
-
         self.actor_name=None
-
         self._storage = {}
 
     def StartActor(self, request, context):
