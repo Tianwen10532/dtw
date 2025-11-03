@@ -29,7 +29,7 @@ def call_remote(stub, actor, method, *args, num_returns=1, **kwargs):
 
 
 def main():
-    channel = grpc.insecure_channel("192.168.117.52:30222")
+    channel = grpc.insecure_channel("192.168.117.52:31589")
     stub = invoke_pb2_grpc.InvokerStub(channel)
 
     # 启动 actor，带初始化参数
