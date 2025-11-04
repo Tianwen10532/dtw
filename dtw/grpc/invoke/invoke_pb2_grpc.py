@@ -44,6 +44,11 @@ class InvokerStub(object):
                 request_serializer=invoke__pb2.InvokeRequest.SerializeToString,
                 response_deserializer=invoke__pb2.InvokeResponse.FromString,
                 _registered_method=True)
+        self.GetResult = channel.unary_unary(
+                '/Invoker/GetResult',
+                request_serializer=invoke__pb2.ResultRequest.SerializeToString,
+                response_deserializer=invoke__pb2.ResultResponse.FromString,
+                _registered_method=True)
 
 
 class InvokerServicer(object):
@@ -61,6 +66,12 @@ class InvokerServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def GetResult(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_InvokerServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -73,6 +84,11 @@ def add_InvokerServicer_to_server(servicer, server):
                     servicer.Invoke,
                     request_deserializer=invoke__pb2.InvokeRequest.FromString,
                     response_serializer=invoke__pb2.InvokeResponse.SerializeToString,
+            ),
+            'GetResult': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetResult,
+                    request_deserializer=invoke__pb2.ResultRequest.FromString,
+                    response_serializer=invoke__pb2.ResultResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -129,6 +145,33 @@ class Invoker(object):
             '/Invoker/Invoke',
             invoke__pb2.InvokeRequest.SerializeToString,
             invoke__pb2.InvokeResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def GetResult(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/Invoker/GetResult',
+            invoke__pb2.ResultRequest.SerializeToString,
+            invoke__pb2.ResultResponse.FromString,
             options,
             channel_credentials,
             insecure,

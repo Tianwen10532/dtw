@@ -1,32 +1,47 @@
 syntax = "proto3";
-//package invoke;
+
 option cc_generic_services = true;
 
+message PartyId{
+  string cmail = 1;
+  string cport = 2;
+  string dmail = 3;
+  string dport = 4;
+}
+
 message StartActorRequest {
-  string actor_name = 1;   // 客户端希望给 actor 取的名字
+  PartyId your_global_id = 1;
   bytes args_pickle = 2;   // (args, kwargs)
 }
 
 message StartActorResponse {
   bool success = 1;
-  string actor_name = 2;
-  string error = 3;
+  string error = 2;
 }
 
 message InvokeRequest {
-  string actor_name = 1;   // 要调用哪个 actor
-  string method = 2;       // 方法名
-  bytes args_pickle = 3;   // (args, kwargs)
+  string method = 1;       // 方法名
+  bytes args_pickle = 2;   // (args, kwargs)
 }
 
 message InvokeResponse {
   bool success = 1;
-  string ObjectID = 2;
-  string SrcParty = 3;
+  string Objid = 2;
+  string SrcIpPort = 3;
   string error = 4;
+}
+
+message ResultRequest {
+  string Objid = 1;
+  string ToIpPort = 2;
+}
+
+message ResultResponse {
+  bool success=1;
 }
 
 service Invoker {
   rpc StartActor(StartActorRequest) returns (StartActorResponse);
   rpc Invoke(InvokeRequest) returns (InvokeResponse);
+  rpc GetResult(ResultRequest) returns (ResultResponse);
 }

@@ -24,7 +24,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0cinvoke.proto\"<\n\x11StartActorRequest\x12\x12\n\nactor_name\x18\x01 \x01(\t\x12\x13\n\x0b\x61rgs_pickle\x18\x02 \x01(\x0c\"H\n\x12StartActorResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\x12\n\nactor_name\x18\x02 \x01(\t\x12\r\n\x05\x65rror\x18\x03 \x01(\t\"H\n\rInvokeRequest\x12\x12\n\nactor_name\x18\x01 \x01(\t\x12\x0e\n\x06method\x18\x02 \x01(\t\x12\x13\n\x0b\x61rgs_pickle\x18\x03 \x01(\x0c\"E\n\x0eInvokeResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\x10\n\x08ObjectID\x18\x02 \x01(\t\x12\x10\n\x08SrcParty\x18\x03 \x01(\t2k\n\x07Invoker\x12\x35\n\nStartActor\x12\x12.StartActorRequest\x1a\x13.StartActorResponse\x12)\n\x06Invoke\x12\x0e.InvokeRequest\x1a\x0f.InvokeResponseB\x03\x80\x01\x01\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0cinvoke.proto\"E\n\x07PartyId\x12\r\n\x05\x63mail\x18\x01 \x01(\t\x12\r\n\x05\x63port\x18\x02 \x01(\t\x12\r\n\x05\x64mail\x18\x03 \x01(\t\x12\r\n\x05\x64port\x18\x04 \x01(\t\"J\n\x11StartActorRequest\x12 \n\x0eyour_global_id\x18\x01 \x01(\x0b\x32\x08.PartyId\x12\x13\n\x0b\x61rgs_pickle\x18\x02 \x01(\x0c\"4\n\x12StartActorResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\r\n\x05\x65rror\x18\x02 \x01(\t\"4\n\rInvokeRequest\x12\x0e\n\x06method\x18\x01 \x01(\t\x12\x13\n\x0b\x61rgs_pickle\x18\x02 \x01(\x0c\"R\n\x0eInvokeResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\r\n\x05Objid\x18\x02 \x01(\t\x12\x11\n\tSrcIpPort\x18\x03 \x01(\t\x12\r\n\x05\x65rror\x18\x04 \x01(\t\"0\n\rResultRequest\x12\r\n\x05Objid\x18\x01 \x01(\t\x12\x10\n\x08ToIpPort\x18\x02 \x01(\t\"!\n\x0eResultResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x32\x99\x01\n\x07Invoker\x12\x35\n\nStartActor\x12\x12.StartActorRequest\x1a\x13.StartActorResponse\x12)\n\x06Invoke\x12\x0e.InvokeRequest\x1a\x0f.InvokeResponse\x12,\n\tGetResult\x12\x0e.ResultRequest\x1a\x0f.ResultResponseB\x03\x80\x01\x01\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -32,14 +32,20 @@ _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'invoke_pb2', _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
   _globals['DESCRIPTOR']._loaded_options = None
   _globals['DESCRIPTOR']._serialized_options = b'\200\001\001'
-  _globals['_STARTACTORREQUEST']._serialized_start=16
-  _globals['_STARTACTORREQUEST']._serialized_end=76
-  _globals['_STARTACTORRESPONSE']._serialized_start=78
-  _globals['_STARTACTORRESPONSE']._serialized_end=150
-  _globals['_INVOKEREQUEST']._serialized_start=152
-  _globals['_INVOKEREQUEST']._serialized_end=224
-  _globals['_INVOKERESPONSE']._serialized_start=226
-  _globals['_INVOKERESPONSE']._serialized_end=295
-  _globals['_INVOKER']._serialized_start=297
-  _globals['_INVOKER']._serialized_end=404
+  _globals['_PARTYID']._serialized_start=16
+  _globals['_PARTYID']._serialized_end=85
+  _globals['_STARTACTORREQUEST']._serialized_start=87
+  _globals['_STARTACTORREQUEST']._serialized_end=161
+  _globals['_STARTACTORRESPONSE']._serialized_start=163
+  _globals['_STARTACTORRESPONSE']._serialized_end=215
+  _globals['_INVOKEREQUEST']._serialized_start=217
+  _globals['_INVOKEREQUEST']._serialized_end=269
+  _globals['_INVOKERESPONSE']._serialized_start=271
+  _globals['_INVOKERESPONSE']._serialized_end=353
+  _globals['_RESULTREQUEST']._serialized_start=355
+  _globals['_RESULTREQUEST']._serialized_end=403
+  _globals['_RESULTRESPONSE']._serialized_start=405
+  _globals['_RESULTRESPONSE']._serialized_end=438
+  _globals['_INVOKER']._serialized_start=441
+  _globals['_INVOKER']._serialized_end=594
 # @@protoc_insertion_point(module_scope)

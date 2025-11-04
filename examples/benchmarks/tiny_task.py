@@ -20,13 +20,16 @@ import dtw
 
 @dtw.remote
 class MyActor:
-    def run(self):
-        return None
+    def __init__(self,value):
+        self.value=value
+    def inc(self,num):
+        self.value=self.value+num
+        return self.value
 
 @dtw.remote
 class Aggregator:
     def aggr(self, val1, val2):
-        return None
+        return val1+val2
 
 def main():
 
