@@ -6,26 +6,25 @@ import dtw.grpc.invoke.invoke_pb2_grpc as invoke_pb2_grpc
 import dtw.grpc.invoke.invoke_pb2 as invoke_pb2
 
 
-def start_actor(stub, name, *args, **kwargs):
+def start_actor(stub, your_global_id, *args, **kwargs):
     payload = cloudpickle.dumps((args, kwargs))
-    req = invoke_pb2.StartActorRequest(actor_name=name, args_pickle=payload)
+    req = invoke_pb2.StartActorRequest(your_global_id=your_global_id, args_pickle=payload)
     resp = stub.StartActor(req)
     if not resp.success:
         raise RuntimeError(f"StartActor failed: {resp.error}")
-    # print(f"✅ Started actor '{name}'")
+    print(f"✅ Started actor")
 
 
-def call_remote(stub, actor, method, *args, num_returns=1, **kwargs):
+def call_remote(stub, method, *args, **kwargs):
     payload = cloudpickle.dumps((args, kwargs))
     req = invoke_pb2.InvokeRequest(
-        actor_name=actor,
         method=method,
         args_pickle=payload,
     )
     resp = stub.Invoke(req)
     if not resp.success:
         raise RuntimeError(resp.error)
-    return [resp.ObjectID, resp.SrcParty]
+    return resp
 
 
 def main():

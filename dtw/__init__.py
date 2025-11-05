@@ -1,2 +1,2 @@
 
-from .api import remote
+from .api import remote,get

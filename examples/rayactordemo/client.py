@@ -42,7 +42,6 @@ def main():
     # 启动 actor，带初始化参数
     start_actor(stub, your_global_id, 101)
 
-
     # 调用 add
     res = call_remote(stub, "add", 10)
     print(res)

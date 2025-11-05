@@ -24,7 +24,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0cinvoke.proto\"E\n\x07PartyId\x12\r\n\x05\x63mail\x18\x01 \x01(\t\x12\r\n\x05\x63port\x18\x02 \x01(\t\x12\r\n\x05\x64mail\x18\x03 \x01(\t\x12\r\n\x05\x64port\x18\x04 \x01(\t\"J\n\x11StartActorRequest\x12 \n\x0eyour_global_id\x18\x01 \x01(\x0b\x32\x08.PartyId\x12\x13\n\x0b\x61rgs_pickle\x18\x02 \x01(\x0c\"4\n\x12StartActorResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\r\n\x05\x65rror\x18\x02 \x01(\t\"4\n\rInvokeRequest\x12\x0e\n\x06method\x18\x01 \x01(\t\x12\x13\n\x0b\x61rgs_pickle\x18\x02 \x01(\x0c\"R\n\x0eInvokeResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\r\n\x05Objid\x18\x02 \x01(\t\x12\x11\n\tSrcIpPort\x18\x03 \x01(\t\x12\r\n\x05\x65rror\x18\x04 \x01(\t\"0\n\rResultRequest\x12\r\n\x05Objid\x18\x01 \x01(\t\x12\x10\n\x08ToIpPort\x18\x02 \x01(\t\"!\n\x0eResultResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x32\x99\x01\n\x07Invoker\x12\x35\n\nStartActor\x12\x12.StartActorRequest\x1a\x13.StartActorResponse\x12)\n\x06Invoke\x12\x0e.InvokeRequest\x1a\x0f.InvokeResponse\x12,\n\tGetResult\x12\x0e.ResultRequest\x1a\x0f.ResultResponseB\x03\x80\x01\x01\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0cinvoke.proto\"E\n\x07PartyId\x12\r\n\x05\x63mail\x18\x01 \x01(\t\x12\r\n\x05\x63port\x18\x02 \x01(\t\x12\r\n\x05\x64mail\x18\x03 \x01(\t\x12\r\n\x05\x64port\x18\x04 \x01(\t\"J\n\x11StartActorRequest\x12 \n\x0eyour_global_id\x18\x01 \x01(\x0b\x32\x08.PartyId\x12\x13\n\x0b\x61rgs_pickle\x18\x02 \x01(\x0c\"4\n\x12StartActorResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\r\n\x05\x65rror\x18\x02 \x01(\t\"4\n\rInvokeRequest\x12\x0e\n\x06method\x18\x01 \x01(\t\x12\x13\n\x0b\x61rgs_pickle\x18\x02 \x01(\x0c\"R\n\x0eInvokeResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\r\n\x05Objid\x18\x02 \x01(\t\x12\x11\n\tSrcIpPort\x18\x03 \x01(\t\x12\r\n\x05\x65rror\x18\x04 \x01(\t\"0\n\rResultRequest\x12\r\n\x05Objid\x18\x01 \x01(\t\x12\x10\n\x08ToIpPort\x18\x02 \x01(\t\"!\n\x0eResultResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\"\x1f\n\x0eGetDataRequest\x12\r\n\x05Objid\x18\x01 \x01(\t\".\n\x0fGetDataResponse\x12\x0c\n\x04\x64\x61ta\x18\x01 \x01(\x0c\x12\r\n\x05ready\x18\x02 \x01(\x08\x32\xc7\x01\n\x07Invoker\x12\x35\n\nStartActor\x12\x12.StartActorRequest\x1a\x13.StartActorResponse\x12)\n\x06Invoke\x12\x0e.InvokeRequest\x1a\x0f.InvokeResponse\x12,\n\tGetResult\x12\x0e.ResultRequest\x1a\x0f.ResultResponse\x12,\n\x07GetData\x12\x0f.GetDataRequest\x1a\x10.GetDataResponseB\x03\x80\x01\x01\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -46,6 +46,10 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_RESULTREQUEST']._serialized_end=403
   _globals['_RESULTRESPONSE']._serialized_start=405
   _globals['_RESULTRESPONSE']._serialized_end=438
-  _globals['_INVOKER']._serialized_start=441
-  _globals['_INVOKER']._serialized_end=594
+  _globals['_GETDATAREQUEST']._serialized_start=440
+  _globals['_GETDATAREQUEST']._serialized_end=471
+  _globals['_GETDATARESPONSE']._serialized_start=473
+  _globals['_GETDATARESPONSE']._serialized_end=519
+  _globals['_INVOKER']._serialized_start=522
+  _globals['_INVOKER']._serialized_end=721
 # @@protoc_insertion_point(module_scope)

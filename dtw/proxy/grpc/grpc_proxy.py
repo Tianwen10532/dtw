@@ -15,7 +15,6 @@ class SendDataService(fed_pb2_grpc.GrpcServiceServicer):
         self._all_data[request.Objid]=cloudpickle.loads(request.data)
         return fed_pb2.SendDataResponse(code=200, result="OK")
 
-
 class GrpcReceiverProxy():
     def __init__(
         self,

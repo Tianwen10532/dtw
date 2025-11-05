@@ -40,8 +40,18 @@ message ResultResponse {
   bool success=1;
 }
 
+message GetDataRequest {
+  string Objid = 1;
+}
+
+message GetDataResponse {
+  bytes data = 1;
+  bool ready = 2;
+}
+
 service Invoker {
   rpc StartActor(StartActorRequest) returns (StartActorResponse);
   rpc Invoke(InvokeRequest) returns (InvokeResponse);
   rpc GetResult(ResultRequest) returns (ResultResponse);
+  rpc GetData(GetDataRequest) returns (GetDataResponse);
 }

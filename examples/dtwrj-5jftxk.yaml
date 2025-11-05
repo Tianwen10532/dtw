@@ -1,12 +1,8 @@
 
-import textwrap
-
-def gen_rayjob_yaml(script:str, rayjob_name:str)->str:
-    return f"""
 apiVersion: ray.io/v1
 kind: RayJob
 metadata:
-  name: {rayjob_name}
+  name: dtwrj-5jftxk
 
 spec:
   backoffLimit: 0
@@ -19,7 +15,7 @@ spec:
       rayStartParams:
         dashboard-host: "0.0.0.0"
       template:
-        metadata: {{}}
+        metadata: {}
         spec:
           containers:
           - image: 10.156.168.113:7887/pytorch/ray:latest-py312-cu128
@@ -32,7 +28,20 @@ spec:
                 pip install git+https://github.com/Tianwen10532/dtw.git;
 
                 read -r -d '' SCRIPT << EOM
-{textwrap.indent(script,' '*16)}
+                import ray
+                from dtw.proxy.grpc.servicer import serve
+                from dtw.grpc.invoke import invoke_pb2_grpc as invoke_pb2_grpc
+                import time
+                @ray.remote
+                class MyActor:
+                    def __init__(self,value):
+                        self.value=value
+                    def inc(self,num):
+                        self.value=self.value+num
+                        return self.value
+                actor_cls=MyActor
+                serve(actor_cls,addr="0.0.0.0:50051", rcv_addr="0.0.0.0:50052")
+
                 EOM
                 printf "%s" "$SCRIPT" > "actorserve.py";
 
@@ -59,11 +68,11 @@ spec:
       maxReplicas: 5
       minReplicas: 1
       numOfHosts: 1
-      rayStartParams: {{}}
+      rayStartParams: {}
       replicas: 1
-      scaleStrategy: {{}}
+      scaleStrategy: {}
       template:
-        metadata: {{}}
+        metadata: {}
         spec:
           containers:
           - image: 10.156.168.113:7887/pytorch/ray:latest-py312-cu128
@@ -88,4 +97,4 @@ spec:
   shutdownAfterJobFinishes: true
   submissionMode: K8sJobMode
   ttlSecondsAfterFinished: 10
-  """
+  

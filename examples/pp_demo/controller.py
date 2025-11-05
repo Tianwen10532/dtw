@@ -1,7 +1,8 @@
 
-from utils import start_actor, call_remote
+from utils import start_actor, call_remote,toDtwObject
 
 from dtw.fed_object import DtwObject
+import dtw
 
 pp1_id={
     'cmail':"0.0.0.0",
@@ -30,4 +31,4 @@ for i in range(10,13):
     dobj=DtwObject(res.Objid,ip,eval(port))
 
     res = call_remote(pp2_cmail, "double", dobj)
-    print(res)
+    print(dtw.get(toDtwObject(res)))

@@ -4,8 +4,13 @@ import inspect
 
 from dtw._private.fed_actor import FedActorHandle
 from dtw._private.fed_call_holder import FedCallHolder
+from dtw.fed_object import DtwObject
+import grpc
 
 import time
+import cloudpickle
+
+from dtw.grpc.invoke import invoke_pb2,invoke_pb2_grpc
 
 # This is the decorator `@dtw.remote`
 def remote(*args, **kwargs):
@@ -74,3 +79,16 @@ class FedRemoteClass:
         fed_actor_handle._execute_impl(*cls_args, **cls_kwargs)
         return fed_actor_handle
     
+def get(dtw_object:DtwObject):
+    url = dtw_object.host+":"+str(dtw_object.port)
+    channel = grpc.insecure_channel(url)
+    stub = invoke_pb2_grpc.InvokerStub(channel)
+
+    while True:
+        req = invoke_pb2.GetDataRequest(Objid=str(dtw_object.uuid))
+        res = stub.GetData(req)
+        if(not res.ready):
+            time.sleep(0.5)
+            continue
+        else:
+            return cloudpickle.loads(res.data)

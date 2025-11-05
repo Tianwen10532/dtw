@@ -86,6 +86,29 @@ class InvokerServicer(invoke_pb2_grpc.InvokerServicer):
         }
         self.data_mailbox.append(task)
         return ResultResponse(success=True)
+    
+    def GetData(self,request, context):
+        uid = request.Objid
+
+        if uid not in self.results.keys():
+            return invoke_pb2.GetDataResponse(
+                data = b"Not ready",
+                ready=False
+            )
+        obj_ref = self.results[uid]
+        ready, _ = ray.wait([obj_ref], timeout=0)
+        if(not ready):
+            return invoke_pb2.GetDataResponse(
+                data = b"Not ready",
+                ready=False
+            )
+        else:
+            data_obj = ray.get(obj_ref)
+            data_bytes = cloudpickle.dumps(data_obj)
+            return invoke_pb2.GetDataResponse(
+                data=data_bytes,
+                ready=True
+            )
 
 
 
@@ -147,7 +170,7 @@ def poll_and_send_results(ivl_serv:InvokerServicer):
             obj_ref = ivl_serv.results[uid]
             ready, _ = ray.wait([obj_ref], timeout=0)
             if ready:
-                print("SEND")
+                # print("SEND")
                 data_obj = ray.get(obj_ref)
                 data_bytes = cloudpickle.dumps(data_obj)
                 send_result(to_ip_port,uid,data_bytes)

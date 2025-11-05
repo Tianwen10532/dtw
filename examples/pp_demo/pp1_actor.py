@@ -1,5 +1,3 @@
-import grpc
-from concurrent import futures
 import ray
 
 from dtw.proxy.grpc.servicer import serve

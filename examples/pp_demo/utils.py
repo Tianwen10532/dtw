@@ -43,3 +43,6 @@ def call_remote(cmail, method, *args, **kwargs):
         raise RuntimeError(resp.error)
     return resp
 
+
+def toDtwObject(res:invoke_pb2.InvokeResponse):
+    return DtwObject(uuid=res.Objid,host=res.SrcIpPort.split(':')[0],port=res.SrcIpPort.split(':')[1])

@@ -38,10 +38,11 @@ class FedActorHandle:
             )
         else:
             self._remote_actor_handle=generate_rayjob_yaml(self._body) #{'status': 'success', 'cluster': '192.168.117.52', 'node_port': 32080, 'rayjob_name': 'dtwrj-ce4zuz'}
+            print(self._remote_actor_handle)
             channel = grpc.insecure_channel(f"{self._remote_actor_handle['cluster']}:{self._remote_actor_handle['node_port']}")
             self._stub = invoke_pb2_grpc.InvokerStub(channel)
             # 启动 actor，带初始化参数
-            start_actor(self._stub, "dtwactor", *cls_args, **cls_kwargs)
+            # start_actor(self._stub, , *cls_args, **cls_kwargs)
 
 
 from dtw.utils import random_suffix
@@ -55,16 +56,16 @@ def generate_rayjob_yaml(cls)->str:
     python_script = inspect.getsource(cls)
     python_script = python_script.splitlines()
     python_script = "\n".join(python_script[1:])
-    python_script = 'import grpc\nfrom concurrent import futures\nimport ray\nfrom dtw.proxy.grpc.servicer import InvokerServicer\nimport dtw.grpc.invoke.invoke_pb2_grpc as invoke_pb2_grpc\n@ray.remote\n'+python_script+'\nactor_cls='+cls.__name__+"""\ndef serve(addr="0.0.0.0:50051"):
-    server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
-    invoke_pb2_grpc.add_InvokerServicer_to_server(InvokerServicer(actor_cls), server)
-    server.add_insecure_port(addr)
-    server.start()
-    print(f"gRPC server started on {addr}")
-    server.wait_for_termination()
-serve()
+    python_script = f"""import ray
+from dtw.proxy.grpc.servicer import serve
+from dtw.grpc.invoke import invoke_pb2_grpc as invoke_pb2_grpc
+import time
+@ray.remote
+{python_script}
+actor_cls={cls.__name__}
+serve(actor_cls,addr="0.0.0.0:50051", rcv_addr="0.0.0.0:50052")
 """
-    # print(python_script)
+    print(python_script)
 
     # rayjob YAML
     rayjob_yaml_str = gen_rayjob_yaml(python_script,rayjob_name)
@@ -81,9 +82,9 @@ serve()
         os.remove(file)
     # ret = ActorHandler(host=node_ip,port=node_port)
     # add_method(cls,ret)
-    wait_for_port(response['cluster'],response['node_port'])
+    # wait_for_port(response['cluster'],response['node_port'])
 
-    return response
+    # return response
 
 def create_actor_req(yaml_files:List[str], route_url="http://127.0.0.1:8000/"):
     files = [
