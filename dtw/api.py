@@ -34,7 +34,6 @@ def remote(*args, **kwargs):
     return functools.partial(_make_fed_remote, **kwargs)
 
 
-
 class FedRemoteClass:
     def __init__(self, func_or_class) -> None:
         self._cls = func_or_class

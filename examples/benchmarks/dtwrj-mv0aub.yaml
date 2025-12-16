@@ -2,7 +2,7 @@
 apiVersion: ray.io/v1
 kind: RayJob
 metadata:
-  name: dtwrj-5jftxk
+  name: dtwrj-mv0aub
 
 spec:
   backoffLimit: 0

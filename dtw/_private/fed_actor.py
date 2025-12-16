@@ -13,6 +13,8 @@ import dtw.grpc.invoke.invoke_pb2_grpc as invoke_pb2_grpc
 import dtw.grpc.invoke.invoke_pb2 as invoke_pb2
 from .control_client import start_actor
 
+from dtw._private.fed_call_holder import FedActorMethod
+
 class FedActorHandle:
     def __init__(
         self,
@@ -37,12 +39,34 @@ class FedActorHandle:
                 .remote(*cls_args, **cls_kwargs)
             )
         else:
-            self._remote_actor_handle=generate_rayjob_yaml(self._body) #{'status': 'success', 'cluster': '192.168.117.52', 'node_port': 32080, 'rayjob_name': 'dtwrj-ce4zuz'}
-            print(self._remote_actor_handle)
-            channel = grpc.insecure_channel(f"{self._remote_actor_handle['cluster']}:{self._remote_actor_handle['node_port']}")
+            self._remote_actor_handle=generate_rayjob_yaml(self._body) # {'status': 'success', 'cluster': '192.168.117.4', 'ivk_port': 31748, 'recv_port': 30319, 'rayjob_name': 'dtwrj-68iye3'}
+
+            channel = grpc.insecure_channel(f"{self._remote_actor_handle['cluster']}:{self._remote_actor_handle['ivk_port']}")
             self._stub = invoke_pb2_grpc.InvokerStub(channel)
+
             # 启动 actor，带初始化参数
-            # start_actor(self._stub, , *cls_args, **cls_kwargs)
+            your_global_id=invoke_pb2.PartyId(
+                cmail=self._remote_actor_handle['cluster'],
+                cport=str(self._remote_actor_handle['ivk_port']),
+                dmail=self._remote_actor_handle['cluster'],
+                dport=str(self._remote_actor_handle['recv_port']),
+            )
+            start_actor(self._stub, your_global_id, *cls_args, **cls_kwargs)
+
+    def __getattr__(self,method_name:str):
+        getattr(self._body, method_name)
+        return FedActorMethod(
+            method_name,
+            self,
+        )
+    
+    def free(self,route_url="http://127.0.0.1:8000/"):
+        url = route_url+'delete_rayjobname/'
+        response = requests.post(url, json={
+            "cluster_ip": self._remote_actor_handle['cluster'],
+            "rayjob_name": self._remote_actor_handle['rayjob_name'],
+        })
+        return response
 
 
 from dtw.utils import random_suffix
@@ -65,7 +89,7 @@ import time
 actor_cls={cls.__name__}
 serve(actor_cls,addr="0.0.0.0:50051", rcv_addr="0.0.0.0:50052")
 """
-    print(python_script)
+    # print(python_script)
 
     # rayjob YAML
     rayjob_yaml_str = gen_rayjob_yaml(python_script,rayjob_name)
@@ -77,26 +101,25 @@ serve(actor_cls,addr="0.0.0.0:50051", rcv_addr="0.0.0.0:50052")
     yaml_files = [f"{rayjob_name}.yaml"]
     response = create_actor_req(yaml_files)
 
-
     for file in yaml_files:
         os.remove(file)
     # ret = ActorHandler(host=node_ip,port=node_port)
     # add_method(cls,ret)
-    # wait_for_port(response['cluster'],response['node_port'])
+    wait_for_port(response['cluster'],response['ivk_port'], response['recv_port'])
 
-    # return response
+    return response
 
 def create_actor_req(yaml_files:List[str], route_url="http://127.0.0.1:8000/"):
     files = [
         ("files",(file_path,open(file_path,"rb"),"application/x-yaml")) for file_path in yaml_files
     ]
     url = route_url+'apply'
-    print(f"request {url}")
+    # print(f"request {url}")
     response = requests.post(url, files=files)
     response=response.json()
     return response
 
-def wait_for_port(host: str, port: int, interval: float = 2.0):
+def wait_for_port(host: str, port1: int, port2:int, interval: float = 2.0):
     """等待某个 TCP 服务开放（阻塞直到成功连接）
     Args:
         host: 服务器IP或域名
@@ -107,7 +130,19 @@ def wait_for_port(host: str, port: int, interval: float = 2.0):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.settimeout(2)
         try:
-            sock.connect((host, port))
+            sock.connect((host, port1))
+            sock.close()
+            # print(f"✅ {host}:{port} 已开放")
+            break
+        except (socket.timeout, ConnectionRefusedError, OSError):
+            # print(f"等待 {host}:{port} 开放中...")
+            time.sleep(interval)
+    
+    while True:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(2)
+        try:
+            sock.connect((host, port2))
             sock.close()
             # print(f"✅ {host}:{port} 已开放")
             return True

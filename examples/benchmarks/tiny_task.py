@@ -33,8 +33,18 @@ class MyActor:
 
 def main():
 
-    ma = MyActor.party("dtwroute").remote()
-    
+    ma = MyActor.party("dtwroute").remote(10)
+    obj = ma.inc.remote(9)
+
+    ma2 = MyActor.party("dtwroute").remote(8)
+    obj = ma2.inc.remote(obj)
+
+    print(dtw.get(obj))
+
+
+    ma.free()
+    ma2.free()
+
     # ray.init(address='local', include_dashboard=False)
 
     # addresses = {
