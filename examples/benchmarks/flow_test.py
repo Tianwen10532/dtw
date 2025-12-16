@@ -1,17 +1,17 @@
 
 import dtw
-from dtw.log.logger import logger
+
 
 @dtw.remote
 class F1:
     def mul2(self,num):
-        logger.info(f"F1 mul2({num})")
+        dtw.logger.info(f"F1 mul2({num})")
         return num*2
     
 @dtw.remote
 class F2:
     def add1(self,num):
-        logger.info(f"F2 add1({num})")
+        dtw.logger.info(f"F2 add1({num})")
         return num+1
     
 @dtw.remote
@@ -20,7 +20,7 @@ class F3:
         self.value=1
 
     def mulval(self,num):
-        logger.info(f"F3 mulval({self.value},{num})")
+        dtw.logger.info(f"F3 mulval({self.value},{num})")
         rel=num*self.value
         self.value=num
         return rel
@@ -28,7 +28,7 @@ class F3:
 @dtw.remote
 class F4:
     def add(self,a,b):
-        logger.info(f"F3 mulval({a},{b})")
+        dtw.logger.info(f"F3 mulval({a},{b})")
         return a+b
     
 

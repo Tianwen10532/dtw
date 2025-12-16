@@ -1,4 +1,4 @@
 
 from .api import remote,get
 
-from .log import logger
+from .log.logger import logger
