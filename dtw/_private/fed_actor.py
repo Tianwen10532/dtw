@@ -81,6 +81,7 @@ def generate_rayjob_yaml(cls)->str:
     python_script = python_script.splitlines()
     python_script = "\n".join(python_script[1:])
     python_script = f"""import ray
+import dtw
 from dtw.proxy.grpc.servicer import serve
 from dtw.grpc.invoke import invoke_pb2_grpc as invoke_pb2_grpc
 import time
