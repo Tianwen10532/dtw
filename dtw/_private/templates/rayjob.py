@@ -28,7 +28,7 @@ spec:
             args:
               - |
                 cd ~;
-                pip install grpcio grpcio-tools;
+                pip install grpcio==1.75.1 grpcio-tools==1.75.1;
                 pip install git+https://github.com/Tianwen10532/dtw.git;
 
                 read -r -d '' SCRIPT << EOM
@@ -71,7 +71,7 @@ spec:
             command: ["/bin/bash", "-c", "--"]
             args:
               - |
-                pip install grpcio grpcio-tools;
+                pip install grpcio==1.75.1 grpcio-tools==1.75.1;
                 pip install git+https://github.com/Tianwen10532/dtw.git;
                 ulimit -n 65536; echo worker; $KUBERAY_GEN_RAY_START_CMD
                 tail -f /dev/null
