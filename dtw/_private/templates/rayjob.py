@@ -28,13 +28,12 @@ spec:
             args:
               - |
                 cd ~;
-                pip install git+https://github.com/Tianwen10532/dtw.git;
 
                 read -r -d '' SCRIPT << EOM
 {textwrap.indent(script,' '*16)}
                 EOM
                 printf "%s" "$SCRIPT" > "actorserve.py";
-
+                
                 ulimit -n 65536; echo head; $KUBERAY_GEN_RAY_START_CMD
             ports:
             - containerPort: 6379
@@ -70,7 +69,6 @@ spec:
             command: ["/bin/bash", "-c", "--"]
             args:
               - |
-                pip install git+https://github.com/Tianwen10532/dtw.git;
                 ulimit -n 65536; echo worker; $KUBERAY_GEN_RAY_START_CMD
                 tail -f /dev/null
             resources:
@@ -81,6 +79,7 @@ spec:
     pip:
       - grpcio==1.75.1 
       - grpcio-tools==1.75.1
+      - git+https://github.com/Tianwen10532/dtw.git
   #   env_vars:
   #     counter_name: "test_counter"
   shutdownAfterJobFinishes: true
