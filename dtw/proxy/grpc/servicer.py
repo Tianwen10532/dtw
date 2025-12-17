@@ -161,8 +161,8 @@ def poll_and_send_results(ivl_serv:InvokerServicer):
             uid = task['uid']
             to_ip_port = task["to_ip_port"]
 
-            if uid in sent_uids:
-                continue
+            # if uid in sent_uids:
+            #     continue
             # 不存在结果
             if uid not in ivl_serv.results.keys():
                 continue
