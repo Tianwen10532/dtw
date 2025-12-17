@@ -28,7 +28,6 @@ spec:
             args:
               - |
                 cd ~;
-                pip install -U grpcio==1.74.0 grpcio-tools==1.74.0;
                 pip install git+https://github.com/Tianwen10532/dtw.git;
 
                 read -r -d '' SCRIPT << EOM
@@ -71,7 +70,6 @@ spec:
             command: ["/bin/bash", "-c", "--"]
             args:
               - |
-                pip install -U grpcio==1.74.0 grpcio-tools==1.74.0;
                 pip install git+https://github.com/Tianwen10532/dtw.git;
                 ulimit -n 65536; echo worker; $KUBERAY_GEN_RAY_START_CMD
                 tail -f /dev/null
@@ -79,10 +77,10 @@ spec:
               requests:
                 cpu: "1"
                 
-  # runtimeEnvYAML: |
-  #   pip:
-  #     - requests==2.26.0
-  #     - pendulum==2.1.2
+  runtimeEnvYAML: |
+    pip:
+      - grpcio==1.75.1 
+      - grpcio-tools==1.75.1
   #   env_vars:
   #     counter_name: "test_counter"
   shutdownAfterJobFinishes: true
