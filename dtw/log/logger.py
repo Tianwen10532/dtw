@@ -2,7 +2,7 @@ import logging
 import logging.handlers
 import time
 
-LOG_SERVER_IP = "10.156.169.53"
+LOG_SERVER_IP = "10.156.169.81"
 LOG_SERVER_PORT = 9020
 
 logger = logging.getLogger("my_app")
