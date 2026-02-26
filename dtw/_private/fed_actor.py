@@ -27,11 +27,15 @@ class FedActorHandle:
         party,
         node_party,
         options,
+        res_req=None,
+        task_cha=None,
     ) -> None:
         self._body = cls
         self._party = party
         self._node_party = node_party
         self._options = options
+        self._res_req = dict(res_req or {})
+        self._task_cha = dict(task_cha or {})
         self._ray_actor_handle = None
         self._remote_actor_handle = None
 
@@ -44,7 +48,11 @@ class FedActorHandle:
             )
             return
 
-        self._remote_actor_handle = generate_rayjob_yaml(self._body)
+        self._remote_actor_handle = generate_rayjob_yaml(
+            self._body,
+            res_req=self._res_req,
+            task_cha=self._task_cha,
+        )
 
         channel = grpc.insecure_channel(
             f"{self._remote_actor_handle['cluster']}:{self._remote_actor_handle['ivk_port']}"
@@ -163,6 +171,13 @@ def _default_required_labels() -> dict[str, Any]:
     return parsed
 
 
+def _default_task_character() -> dict[str, Any]:
+    return {
+        "priority": os.getenv("DTW_TASK_PRIORITY", "normal"),
+        "tenant": os.getenv("DTW_TASK_TENANT", "default"),
+    }
+
+
 def _normalize_apply_response(body: dict[str, Any]) -> dict[str, Any]:
     # scheduler response: {"cluster_apply_response": {...}}
     if "cluster_apply_response" in body:
@@ -208,7 +223,7 @@ def _resolve_cluster_base_url(route_url: str, cluster_ip: str | None) -> str | N
     return None
 
 
-def generate_rayjob_yaml(cls) -> dict[str, Any]:
+def generate_rayjob_yaml(cls, res_req: dict[str, Any] | None = None, task_cha: dict[str, Any] | None = None) -> dict[str, Any]:
     rayjob_name = f"dtwrj-{random_suffix()}"
 
     python_script = inspect.getsource(cls)
@@ -226,16 +241,45 @@ serve(actor_cls,addr=\"0.0.0.0:50051\", rcv_addr=\"0.0.0.0:50052\")
 """
 
     rayjob_yaml_str = gen_rayjob_yaml(python_script, rayjob_name)
-    response = create_actor_req(rayjob_yaml_str)
+    response = create_actor_req(
+        rayjob_yaml_str,
+        res_req=res_req,
+        task_cha=task_cha,
+    )
     wait_for_port(response["cluster"], response["ivk_port"], response["recv_port"])
     return response
 
 
-def create_actor_req(resource_yaml: str, route_url: str | None = None) -> dict[str, Any]:
+def create_actor_req(
+    resource_yaml: str,
+    route_url: str | None = None,
+    res_req: dict[str, Any] | None = None,
+    task_cha: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     normalized_route = _normalize_route_url(route_url)
     url = normalized_route + "apply"
     timeout_seconds = int(os.getenv("DTW_APPLY_TIMEOUT_SECONDS", "300"))
     namespace = _default_namespace()
+
+    resource_request = {
+        "source_node": _default_source_node(),
+        "scheduler_policy": os.getenv("DTW_SCHEDULER_POLICY", "round_robin"),
+        "required_labels": _default_required_labels(),
+        "dry_run": False,
+    }
+    if res_req:
+        resource_request.update(res_req)
+    # Compatibility alias used by examples:
+    # target_cluster_url -> cluster_base_url
+    if (
+        resource_request.get("cluster_base_url") is None
+        and resource_request.get("target_cluster_url") is not None
+    ):
+        resource_request["cluster_base_url"] = resource_request.get("target_cluster_url")
+
+    task_character = _default_task_character()
+    if task_cha:
+        task_character.update(task_cha)
 
     scheduler_payload = {
         "dtw-content": {
@@ -243,13 +287,8 @@ def create_actor_req(resource_yaml: str, route_url: str | None = None) -> dict[s
             "namespace": namespace,
             "timeout_seconds": timeout_seconds,
         },
-        "dtw-resource-request": {
-            "source_node": _default_source_node(),
-            "scheduler_policy": os.getenv("DTW_SCHEDULER_POLICY", "round_robin"),
-            "required_labels": _default_required_labels(),
-            "dry_run": False,
-        },
-        "dtw-task-character": {},
+        "dtw-resource-request": resource_request,
+        "dtw-task-character": task_character,
     }
     cluster_base_url = os.getenv("DTW_CLUSTER_BASE_URL")
     if cluster_base_url:

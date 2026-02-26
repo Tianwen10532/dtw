@@ -1,6 +1,7 @@
 
 import functools
 import inspect
+from typing import Any
 
 from dtw._private.fed_actor import FedActorHandle
 from dtw.fed_object import DtwObject
@@ -39,13 +40,43 @@ class FedRemoteClass:
         self._options = {}
         self._party = "local"
         self._node_party = "local"
+        self._res_req: dict[str, Any] = {}
+        self._task_cha: dict[str, Any] = {}
+
+    @staticmethod
+    def _normalize_kv(*args, **kwargs) -> dict[str, Any]:
+        if len(args) > 1:
+            raise TypeError("Only one positional dict is supported.")
+        data: dict[str, Any] = {}
+        if len(args) == 1:
+            if not isinstance(args[0], dict):
+                raise TypeError("Positional argument must be a dict.")
+            data.update(args[0])
+        data.update(kwargs)
+        return data
 
     def options(self, **options):
         self._options = options
         return self
 
-    def party(self, party:str):
-        self._node_party=party
+    def res_req(self, *args, **kwargs):
+        self._res_req = self._normalize_kv(*args, **kwargs)
+        # Compatibility alias used by benchmark examples.
+        if (
+            "cluster_base_url" not in self._res_req
+            and "target_cluster_url" in self._res_req
+        ):
+            self._res_req["cluster_base_url"] = self._res_req["target_cluster_url"]
+        self._node_party = "dtwroute"
+        return self
+
+    def task_cha(self, *args, **kwargs):
+        self._task_cha = self._normalize_kv(*args, **kwargs)
+        return self
+
+    # backward compatibility
+    def party(self, party: str):
+        self._node_party = party
         return self
 
     def remote(self, *cls_args, **cls_kwargs):
@@ -66,6 +97,8 @@ class FedRemoteClass:
             self._party,
             self._node_party,
             self._options,
+            self._res_req,
+            self._task_cha,
         )
         # fed_call_holder = FedCallHolder(
         #     _node_party, fed_actor_handle._execute_impl, self._options
