@@ -22,7 +22,7 @@ spec:
         metadata: {{}}
         spec:
           containers:
-          - image: 10.156.168.113:7887/pytorch/ray:latest-py312-cu128
+          - image: 10.156.168.113:7887/pytorch/ray:py312-cu128-deps
             name: ray-head
             command: ["/bin/bash", "-c", "--"]
             args:
@@ -64,7 +64,7 @@ spec:
         metadata: {{}}
         spec:
           containers:
-          - image: 10.156.168.113:7887/pytorch/ray:latest-py312-cu128
+          - image: 10.156.168.113:7887/pytorch/ray:py312-cu128-deps
             name: ray-worker
             command: ["/bin/bash", "-c", "--"]
             args:

@@ -3,7 +3,6 @@ import functools
 import inspect
 
 from dtw._private.fed_actor import FedActorHandle
-from dtw._private.fed_call_holder import FedCallHolder
 from dtw.fed_object import DtwObject
 import grpc
 
@@ -38,7 +37,8 @@ class FedRemoteClass:
     def __init__(self, func_or_class) -> None:
         self._cls = func_or_class
         self._options = {}
-        self._party = "get current party"
+        self._party = "local"
+        self._node_party = "local"
 
     def options(self, **options):
         self._options = options
@@ -55,8 +55,7 @@ class FedRemoteClass:
         if(self._node_party=="local"):
             self._node_party = self._party
         elif(self._node_party=="dtwroute"):
-            # TODO 算力路由资源请求
-            self._node_party = "get dtwroute party"
+            self._node_party = "dtwroute"
         elif(self._node_party=="auto"):
             pass
         else:
