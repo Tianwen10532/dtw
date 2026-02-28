@@ -12,6 +12,9 @@ import cloudpickle
 
 from dtw.grpc.invoke import invoke_pb2,invoke_pb2_grpc
 
+# Cached source attribute set at decoration time.
+_DTW_CACHED_SOURCE_ATTR = "__dtw_cached_source__"
+
 # This is the decorator `@dtw.remote`
 def remote(*args, **kwargs):
     def _make_fed_remote(function_or_class, **options):
@@ -21,6 +24,12 @@ def remote(*args, **kwargs):
         #     return FedRemoteFunction(function_or_class).options(**options)
 
         if inspect.isclass(function_or_class):
+            # Cache source at decoration time so runtime does not rely on inspect lookup.
+            try:
+                src = inspect.getsource(function_or_class)
+                setattr(function_or_class, _DTW_CACHED_SOURCE_ATTR, src)
+            except (OSError, TypeError):
+                pass
             return FedRemoteClass(function_or_class).options(**options)
 
         raise TypeError(
@@ -42,6 +51,7 @@ class FedRemoteClass:
         self._node_party = "local"
         self._res_req: dict[str, Any] = {}
         self._task_cha: dict[str, Any] = {}
+        self._source_cache: str | None = getattr(func_or_class, _DTW_CACHED_SOURCE_ATTR, None)
 
     @staticmethod
     def _normalize_kv(*args, **kwargs) -> dict[str, Any]:
@@ -99,6 +109,7 @@ class FedRemoteClass:
             self._options,
             self._res_req,
             self._task_cha,
+            source_cache=self._source_cache,
         )
         # fed_call_holder = FedCallHolder(
         #     _node_party, fed_actor_handle._execute_impl, self._options

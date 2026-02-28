@@ -30,6 +30,7 @@ class FedActorHandle:
         options,
         res_req=None,
         task_cha=None,
+        source_cache: str | None = None,
     ) -> None:
         self._body = cls
         self._party = party
@@ -37,6 +38,7 @@ class FedActorHandle:
         self._options = options
         self._res_req = dict(res_req or {})
         self._task_cha = dict(task_cha or {})
+        self._source_cache = source_cache
         self._ray_actor_handle = None
         self._remote_actor_handle = None
 
@@ -53,6 +55,7 @@ class FedActorHandle:
             self._body,
             res_req=self._res_req,
             task_cha=self._task_cha,
+            source_cache=self._source_cache,
         )
 
         channel = grpc.insecure_channel(
@@ -234,7 +237,12 @@ def _resolve_cluster_base_url(route_url: str, cluster_ip: str | None) -> str | N
     return None
 
 
-def generate_rayjob_yaml(cls, res_req: dict[str, Any] | None = None, task_cha: dict[str, Any] | None = None) -> dict[str, Any]:
+def generate_rayjob_yaml(
+    cls,
+    res_req: dict[str, Any] | None = None,
+    task_cha: dict[str, Any] | None = None,
+    source_cache: str | None = None,
+) -> dict[str, Any]:
     rayjob_name = f"dtwrj-{random_suffix()}"
     requested_gpu = 0
     if res_req and "gpu" in res_req:
@@ -243,7 +251,15 @@ def generate_rayjob_yaml(cls, res_req: dict[str, Any] | None = None, task_cha: d
         f"@ray.remote(num_gpus={requested_gpu})" if requested_gpu > 0 else "@ray.remote"
     )
 
-    dtw_wrapped_source = inspect.getsource(cls)
+    dtw_wrapped_source = source_cache or getattr(cls, "__dtw_cached_source__", None)
+    if not dtw_wrapped_source:
+        try:
+            dtw_wrapped_source = inspect.getsource(cls)
+        except (OSError, TypeError) as exc:
+            raise OSError(
+                "Could not resolve actor class source. "
+                "Please define the class in a regular .py file and decorate it with @dtw.remote."
+            ) from exc
     runtime_source_lines = dtw_wrapped_source.splitlines()
     while runtime_source_lines and runtime_source_lines[0].lstrip().startswith("@"):
         runtime_source_lines.pop(0)
