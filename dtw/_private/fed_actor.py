@@ -178,6 +178,16 @@ def _default_task_character() -> dict[str, Any]:
     }
 
 
+def _normalize_gpu_count(raw_gpu: Any) -> int:
+    try:
+        gpu = int(raw_gpu)
+    except Exception as exc:
+        raise ValueError(f"res_req.gpu must be an integer, got: {raw_gpu}") from exc
+    if gpu < 0:
+        raise ValueError(f"res_req.gpu must be >= 0, got: {raw_gpu}")
+    return gpu
+
+
 def _normalize_apply_response(body: dict[str, Any]) -> dict[str, Any]:
     # scheduler response: {"cluster_apply_response": {...}}
     if "cluster_apply_response" in body:
@@ -225,6 +235,12 @@ def _resolve_cluster_base_url(route_url: str, cluster_ip: str | None) -> str | N
 
 def generate_rayjob_yaml(cls, res_req: dict[str, Any] | None = None, task_cha: dict[str, Any] | None = None) -> dict[str, Any]:
     rayjob_name = f"dtwrj-{random_suffix()}"
+    requested_gpu = 0
+    if res_req and "gpu" in res_req:
+        requested_gpu = _normalize_gpu_count(res_req.get("gpu"))
+    actor_remote_decorator = (
+        f"@ray.remote(num_gpus={requested_gpu})" if requested_gpu > 0 else "@ray.remote"
+    )
 
     python_script = inspect.getsource(cls)
     python_script = python_script.splitlines()
@@ -234,13 +250,13 @@ import dtw
 from dtw.proxy.grpc.servicer import serve
 from dtw.grpc.invoke import invoke_pb2_grpc as invoke_pb2_grpc
 import time
-@ray.remote
+{actor_remote_decorator}
 {python_script}
 actor_cls={cls.__name__}
 serve(actor_cls,addr=\"0.0.0.0:50051\", rcv_addr=\"0.0.0.0:50052\")
 """
 
-    rayjob_yaml_str = gen_rayjob_yaml(python_script, rayjob_name)
+    rayjob_yaml_str = gen_rayjob_yaml(python_script, rayjob_name, gpu=requested_gpu)
     response = create_actor_req(
         rayjob_yaml_str,
         res_req=res_req,
@@ -276,6 +292,16 @@ def create_actor_req(
         and resource_request.get("target_cluster_url") is not None
     ):
         resource_request["cluster_base_url"] = resource_request.get("target_cluster_url")
+    if "gpu" in resource_request:
+        gpu = _normalize_gpu_count(resource_request.get("gpu"))
+        resource_request["gpu"] = gpu
+        required_labels = resource_request.get("required_labels")
+        if required_labels is None:
+            required_labels = {}
+            resource_request["required_labels"] = required_labels
+        if not isinstance(required_labels, dict):
+            raise ValueError("res_req.required_labels must be a dict.")
+        required_labels["gpu"] = gpu
 
     task_character = _default_task_character()
     if task_cha:

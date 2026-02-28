@@ -1,7 +1,16 @@
 
 import textwrap
 
-def gen_rayjob_yaml(script:str, rayjob_name:str)->str:
+def gen_rayjob_yaml(script: str, rayjob_name: str, gpu: int = 0) -> str:
+    head_gpu_requests = ""
+    head_gpu_limits = ""
+    worker_gpu_requests = ""
+    worker_gpu_limits = ""
+    if gpu > 0:
+        head_gpu_requests = f'\n                nvidia.com/gpu: "{gpu}"'
+        head_gpu_limits = f'\n              limits:\n                nvidia.com/gpu: "{gpu}"'
+        worker_gpu_requests = f'\n                nvidia.com/gpu: "{gpu}"'
+        worker_gpu_limits = f'\n              limits:\n                nvidia.com/gpu: "{gpu}"'
     return f"""
 apiVersion: ray.io/v1
 kind: RayJob
@@ -48,10 +57,6 @@ spec:
               name: invoke
             - containerPort: 50052
               name: receiver
-            resources:
-              requests:
-                cpu: "1"
-                memory: "2Gi"
     workerGroupSpecs:
     - groupName: small-group
       maxReplicas: 5
@@ -73,7 +78,7 @@ spec:
                 tail -f /dev/null
             resources:
               requests:
-                cpu: "1"
+                cpu: "1"{worker_gpu_requests}{worker_gpu_limits}
                 
   runtimeEnvYAML: |
     pip:
