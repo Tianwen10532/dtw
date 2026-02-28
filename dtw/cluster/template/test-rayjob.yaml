@@ -1,12 +1,11 @@
-
 apiVersion: ray.io/v1
 kind: RayJob
 metadata:
-  name: dtw-rayjob
+  name: dtw-rayjob-example
 
 spec:
   backoffLimit: 0
-  entrypoint: python actorserve.py #入口命令
+  entrypoint: python actorserve.py
 
   rayClusterSpec:
     rayVersion: "2.50.1"
@@ -24,46 +23,50 @@ spec:
             args:
               - |
                 cd ~;
-                pip install grpcio grpcio-tools;
-                pip install git+https://github.com/Tianwen10532/dtw.git;
 
                 read -r -d '' SCRIPT << EOM
-                import grpc
-                from concurrent import futures
                 import ray
-                from dtw.proxy.grpc.servicer import InvokerServicer
-                import dtw.grpc.invoke.invoke_pb2_grpc as invoke_pb2_grpc
-                @ray.remote
+                import dtw
+                from dtw.proxy.grpc.servicer import serve
+                from dtw.grpc.invoke import invoke_pb2_grpc as invoke_pb2_grpc
+                import time
+
+                # Keep original @dtw.remote source for compatibility/debug.
+                @dtw.remote
                 class AddWorker:
-                    def __init__(self, accu:int):
-                        self.accu=accu;
-                    def add(self, input:int) -> int:
+                    def __init__(self, accu: int):
+                        self.accu = accu
+
+                    def add(self, input: int) -> int:
                         input = int(input)
-                        # time.sleep(10)
-                        self.accu+=input
-                        # return str(input+1)
+                        self.accu += input
                         return self.accu
-                    def double(self, input:int) -> int:
-                        input=int(input)
-                        # time.sleep(10)
-                        return input*2
-                actor_cls = AddWorker
-                def serve(addr="0.0.0.0:50051"):
-                    server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
-                    invoke_pb2_grpc.add_InvokerServicer_to_server(InvokerServicer(actor_cls), server)
-                    server.add_insecure_port(addr)
-                    server.start()
-                    print(f"gRPC server started on {addr}")
-                    server.wait_for_termination()
-                serve()
 
+                    def double(self, input: int) -> int:
+                        input = int(input)
+                        return input * 2
+
+                # Runtime actor class renamed to avoid class-name conflict.
+                @ray.remote
+                class AddWorkerRayRuntime:
+                    def __init__(self, accu: int):
+                        self.accu = accu
+
+                    def add(self, input: int) -> int:
+                        input = int(input)
+                        self.accu += input
+                        return self.accu
+
+                    def double(self, input: int) -> int:
+                        input = int(input)
+                        return input * 2
+
+                actor_cls = AddWorkerRayRuntime
+                serve(actor_cls, addr="0.0.0.0:50051", rcv_addr="0.0.0.0:50052")
                 EOM
-                printf "%s" "$SCRIPT" > "actorserve.py";
 
+                printf "%s" "$SCRIPT" > "actorserve.py";
                 ulimit -n 65536; echo head; $KUBERAY_GEN_RAY_START_CMD
-              
-                
-                
             ports:
             - containerPort: 6379
               name: gcs
@@ -73,8 +76,10 @@ spec:
               name: client
             - containerPort: 8000
               name: serve
-            - containerPort: 50051   # <-- gRPC 服务端口
-              name: grpc
+            - containerPort: 50051
+              name: invoke
+            - containerPort: 50052
+              name: receiver
             resources:
               requests:
                 cpu: "1"
@@ -96,20 +101,18 @@ spec:
             command: ["/bin/bash", "-c", "--"]
             args:
               - |
-                pip install grpcio grpcio-tools;
-                pip install git+https://github.com/Tianwen10532/dtw.git;
                 ulimit -n 65536; echo worker; $KUBERAY_GEN_RAY_START_CMD
                 tail -f /dev/null
             resources:
               requests:
                 cpu: "1"
-                
-  # runtimeEnvYAML: |
-  #   pip:
-  #     - requests==2.26.0
-  #     - pendulum==2.1.2
-  #   env_vars:
-  #     counter_name: "test_counter"
+
+  runtimeEnvYAML: |
+    pip:
+      - grpcio==1.75.1
+      - grpcio-tools==1.75.1
+      - git+https://github.com/Tianwen10532/dtw.git
+
   shutdownAfterJobFinishes: true
   submissionMode: K8sJobMode
   ttlSecondsAfterFinished: 10

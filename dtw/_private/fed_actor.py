@@ -1,6 +1,7 @@
 import inspect
 import json
 import os
+import re
 import socket
 import time
 from typing import Any
@@ -242,17 +243,31 @@ def generate_rayjob_yaml(cls, res_req: dict[str, Any] | None = None, task_cha: d
         f"@ray.remote(num_gpus={requested_gpu})" if requested_gpu > 0 else "@ray.remote"
     )
 
-    python_script = inspect.getsource(cls)
-    python_script = python_script.splitlines()
-    python_script = "\n".join(python_script[1:])
+    dtw_wrapped_source = inspect.getsource(cls)
+    runtime_source_lines = dtw_wrapped_source.splitlines()
+    while runtime_source_lines and runtime_source_lines[0].lstrip().startswith("@"):
+        runtime_source_lines.pop(0)
+    runtime_source = "\n".join(runtime_source_lines)
+    runtime_cls_name = f"{cls.__name__}RayRuntime"
+    runtime_source = re.sub(
+        rf"^(\s*class\s+){re.escape(cls.__name__)}(\b)",
+        rf"\1{runtime_cls_name}\2",
+        runtime_source,
+        count=1,
+        flags=re.MULTILINE,
+    )
+
     python_script = f"""import ray
 import dtw
 from dtw.proxy.grpc.servicer import serve
 from dtw.grpc.invoke import invoke_pb2_grpc as invoke_pb2_grpc
 import time
+# Keep original @dtw.remote source for compatibility/debug.
+{dtw_wrapped_source}
+
 {actor_remote_decorator}
-{python_script}
-actor_cls={cls.__name__}
+{runtime_source}
+actor_cls={runtime_cls_name}
 serve(actor_cls,addr=\"0.0.0.0:50051\", rcv_addr=\"0.0.0.0:50052\")
 """
 
