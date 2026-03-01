@@ -393,7 +393,13 @@ def create_actor_req(
         }
         response = requests.post(url, json=legacy_payload, timeout=timeout_seconds + 15)
 
-    response.raise_for_status()
+    try:
+        response.raise_for_status()
+    except requests.HTTPError as exc:
+        body = response.text
+        raise RuntimeError(
+            f"Apply request failed: status={response.status_code}, url={url}, body={body}"
+        ) from exc
     body = response.json()
     normalized = _normalize_apply_response(body)
 

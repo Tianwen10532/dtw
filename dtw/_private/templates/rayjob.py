@@ -2,7 +2,7 @@
 import textwrap
 
 
-RUNTIME_IMAGE = "10.156.168.113:7887/pytorch/ray:py312-cu128-deps"
+RUNTIME_IMAGE = "10.156.168.113:7887/pytorch/ray:py312-cu128-deps-v2"
 
 
 def gen_rayjob_yaml(script: str, rayjob_name: str, gpu: int = 0) -> str:
