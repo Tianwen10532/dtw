@@ -99,8 +99,11 @@ spec:
 
 def gen_pod_yaml(script: str, pod_name: str, gpu: int = 0) -> str:
     gpu_resources = ""
+    gpu_limits = ""
     if gpu > 0:
-        gpu_resources = f'\n            nvidia.com/gpu: "{gpu}"'
+        # Keep same indentation level as "cpu" under resources.requests.
+        gpu_resources = f'\n        nvidia.com/gpu: "{gpu}"'
+        gpu_limits = f'\n      limits:\n        nvidia.com/gpu: "{gpu}"'
 
     return f"""
 apiVersion: v1
@@ -134,6 +137,7 @@ spec:
     resources:
       requests:
         cpu: "1"{gpu_resources}
+{gpu_limits}
 ---
 apiVersion: v1
 kind: Service
