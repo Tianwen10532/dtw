@@ -1,6 +1,10 @@
 
 import textwrap
 
+
+RUNTIME_IMAGE = "10.156.168.113:7887/pytorch/ray:py312-cu128-deps"
+
+
 def gen_rayjob_yaml(script: str, rayjob_name: str, gpu: int = 0) -> str:
     head_gpu_requests = ""
     head_gpu_limits = ""
@@ -31,7 +35,7 @@ spec:
         metadata: {{}}
         spec:
           containers:
-          - image: 10.156.168.113:7887/pytorch/ray:py312-cu128-deps
+          - image: {RUNTIME_IMAGE}
             name: ray-head
             command: ["/bin/bash", "-c", "--"]
             args:
@@ -69,7 +73,7 @@ spec:
         metadata: {{}}
         spec:
           containers:
-          - image: 10.156.168.113:7887/pytorch/ray:py312-cu128-deps
+          - image: {RUNTIME_IMAGE}
             name: ray-worker
             command: ["/bin/bash", "-c", "--"]
             args:
@@ -91,3 +95,60 @@ spec:
   submissionMode: K8sJobMode
   ttlSecondsAfterFinished: 10
   """
+
+
+def gen_pod_yaml(script: str, pod_name: str, gpu: int = 0) -> str:
+    gpu_resources = ""
+    if gpu > 0:
+        gpu_resources = f'\n            nvidia.com/gpu: "{gpu}"'
+
+    return f"""
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {pod_name}
+  labels:
+    app: {pod_name}
+spec:
+  restartPolicy: Never
+  containers:
+  - name: dtw-runtime
+    image: {RUNTIME_IMAGE}
+    command: ["/bin/bash", "-c", "--"]
+    args:
+      - |
+        cd ~;
+
+        read -r -d '' SCRIPT << EOM
+{textwrap.indent(script, ' '*8)}
+        EOM
+        printf "%s" "$SCRIPT" > "actorserve.py";
+
+        ulimit -n 65536; python actorserve.py
+    ports:
+    - containerPort: 50051
+      name: invoke
+    - containerPort: 50052
+      name: receiver
+    resources:
+      requests:
+        cpu: "1"{gpu_resources}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {pod_name}
+spec:
+  type: NodePort
+  selector:
+    app: {pod_name}
+  ports:
+  - name: invoke
+    port: 50051
+    targetPort: invoke
+    protocol: TCP
+  - name: receiver
+    port: 50052
+    targetPort: receiver
+    protocol: TCP
+"""

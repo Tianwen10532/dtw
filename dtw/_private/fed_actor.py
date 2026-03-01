@@ -18,7 +18,7 @@ from dtw.log.logger import logger
 from dtw.utils import random_suffix
 
 from .control_client import start_actor
-from .templates.rayjob import gen_rayjob_yaml
+from .templates.rayjob import gen_pod_yaml, gen_rayjob_yaml
 
 
 class FedActorHandle:
@@ -81,7 +81,16 @@ class FedActorHandle:
             normalized_route = _normalize_route_url(used_route_url)
             url = normalized_route + "delete_rayjobname/"
             namespace = self._remote_actor_handle.get("namespace", _default_namespace())
-            rayjob_name = self._remote_actor_handle["rayjob_name"]
+            runtime = _normalize_runtime(self._remote_actor_handle.get("runtime", "rayjob"))
+            resource_name = (
+                self._remote_actor_handle.get("resource_name")
+                or self._remote_actor_handle.get("rayjob_name")
+            )
+            if not resource_name:
+                return {
+                    "status": "error",
+                    "message": "missing resource_name for delete",
+                }
             cluster_base_url = self._remote_actor_handle.get("cluster_base_url")
             if not cluster_base_url and _is_scheduler_endpoint(normalized_route):
                 cluster_base_url = _resolve_cluster_base_url(
@@ -91,7 +100,9 @@ class FedActorHandle:
                     self._remote_actor_handle["cluster_base_url"] = cluster_base_url
 
             scheduler_payload = {
-                "rayjob_name": rayjob_name,
+                "runtime": runtime,
+                "resource_name": resource_name,
+                "rayjob_name": resource_name,
                 "namespace": namespace,
                 "cluster_base_url": cluster_base_url,
             }
@@ -111,7 +122,7 @@ class FedActorHandle:
                 # Compatibility fallback for legacy delete payload.
                 legacy_payload = {
                     "cluster_ip": self._remote_actor_handle.get("cluster"),
-                    "rayjob_name": rayjob_name,
+                    "rayjob_name": resource_name,
                     "namespace": namespace,
                 }
                 legacy_payload = {
@@ -123,14 +134,15 @@ class FedActorHandle:
                     return response.json()
                 except Exception as second_exc:
                     logger.exception(
-                        "free failed rayjob=%s route_url=%s",
-                        rayjob_name,
+                        "free failed resource=%s route_url=%s",
+                        resource_name,
                         normalized_route,
                     )
                     return {
                         "status": "error",
-                        "message": "delete rayjob failed",
-                        "rayjob_name": rayjob_name,
+                        "message": "delete runtime resource failed",
+                        "resource_name": resource_name,
+                        "runtime": runtime,
                         "scheduler_error": str(first_exc),
                         "legacy_error": str(second_exc),
                     }
@@ -192,6 +204,13 @@ def _normalize_gpu_count(raw_gpu: Any) -> int:
     return gpu
 
 
+def _normalize_runtime(raw_runtime: Any) -> str:
+    runtime = str(raw_runtime or "rayjob").strip().lower()
+    if runtime not in {"rayjob", "pod"}:
+        raise ValueError(f"res_req.runtime must be 'rayjob' or 'pod', got: {raw_runtime}")
+    return runtime
+
+
 def _normalize_apply_response(body: dict[str, Any]) -> dict[str, Any]:
     # scheduler response: {"cluster_apply_response": {...}}
     if "cluster_apply_response" in body:
@@ -243,7 +262,8 @@ def generate_rayjob_yaml(
     task_cha: dict[str, Any] | None = None,
     source_cache: str | None = None,
 ) -> dict[str, Any]:
-    rayjob_name = f"dtwrj-{random_suffix()}"
+    runtime = _normalize_runtime((res_req or {}).get("runtime", "rayjob"))
+    resource_name = f"dtw{runtime[:1]}-{random_suffix()}"
     requested_gpu = 0
     if res_req and "gpu" in res_req:
         requested_gpu = _normalize_gpu_count(res_req.get("gpu"))
@@ -264,7 +284,7 @@ def generate_rayjob_yaml(
     while runtime_source_lines and runtime_source_lines[0].lstrip().startswith("@"):
         runtime_source_lines.pop(0)
     runtime_source = "\n".join(runtime_source_lines)
-    runtime_cls_name = f"{cls.__name__}RayRuntime"
+    runtime_cls_name = f"{cls.__name__}Runtime"
     runtime_source = re.sub(
         rf"^(\s*class\s+){re.escape(cls.__name__)}(\b)",
         rf"\1{runtime_cls_name}\2",
@@ -287,12 +307,19 @@ actor_cls={runtime_cls_name}
 serve(actor_cls,addr=\"0.0.0.0:50051\", rcv_addr=\"0.0.0.0:50052\")
 """
 
-    rayjob_yaml_str = gen_rayjob_yaml(python_script, rayjob_name, gpu=requested_gpu)
+    if runtime == "pod":
+        runtime_yaml = gen_pod_yaml(python_script, resource_name, gpu=requested_gpu)
+    else:
+        runtime_yaml = gen_rayjob_yaml(python_script, resource_name, gpu=requested_gpu)
     response = create_actor_req(
-        rayjob_yaml_str,
+        runtime_yaml,
         res_req=res_req,
         task_cha=task_cha,
     )
+    response["runtime"] = runtime
+    response["resource_name"] = response.get("resource_name") or response.get("rayjob_name") or resource_name
+    if not response.get("rayjob_name"):
+        response["rayjob_name"] = response["resource_name"]
     wait_for_port(response["cluster"], response["ivk_port"], response["recv_port"])
     return response
 
@@ -316,6 +343,7 @@ def create_actor_req(
     }
     if res_req:
         resource_request.update(res_req)
+    resource_request["runtime"] = _normalize_runtime(resource_request.get("runtime", "rayjob"))
     # Compatibility alias used by examples:
     # target_cluster_url -> cluster_base_url
     if (
@@ -369,10 +397,16 @@ def create_actor_req(
     body = response.json()
     normalized = _normalize_apply_response(body)
 
-    required = ("cluster", "ivk_port", "recv_port", "rayjob_name")
+    required = ("cluster", "ivk_port", "recv_port")
     missing = [k for k in required if normalized.get(k) in (None, "")]
     if missing:
         raise RuntimeError(f"Apply response missing keys: {missing}, body={body}")
+    if normalized.get("resource_name") in (None, "") and normalized.get("rayjob_name") not in (None, ""):
+        normalized["resource_name"] = normalized.get("rayjob_name")
+    if normalized.get("rayjob_name") in (None, "") and normalized.get("resource_name") not in (None, ""):
+        normalized["rayjob_name"] = normalized.get("resource_name")
+    if normalized.get("resource_name") in (None, ""):
+        raise RuntimeError(f"Apply response missing resource_name/rayjob_name, body={body}")
 
     if not normalized.get("cluster_base_url") and _is_scheduler_endpoint(normalized_route):
         inferred = _resolve_cluster_base_url(normalized_route, normalized.get("cluster"))
