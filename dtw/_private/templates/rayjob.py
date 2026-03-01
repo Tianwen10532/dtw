@@ -124,6 +124,7 @@ spec:
         EOM
         printf "%s" "$SCRIPT" > "actorserve.py";
 
+        python -m pip install --no-cache-dir grpcio==1.75.1 grpcio-tools==1.75.1 git+https://github.com/Tianwen10532/dtw.git;
         ulimit -n 65536; python actorserve.py
     ports:
     - containerPort: 50051
