@@ -34,9 +34,9 @@ class F4:
 
 def main():
     f1 = F1.res_req().task_cha().remote()
-    f2 = F2.res_req(target_cluster_url="http://10.0.2.10:30080").task_cha().remote()
-    f3 = F3.res_req(target_cluster_url="http://10.0.3.10:30080").task_cha().remote()
-    f4 = F4.res_req(target_cluster_url="http://10.0.4.10:30080").task_cha().remote()
+    f2 = F2.res_req(target_cluster_url="http://10.0.1.10:30080").task_cha().remote()
+    f3 = F3.res_req(target_cluster_url="http://10.0.2.10:30080").task_cha().remote()
+    f4 = F4.res_req(target_cluster_url="http://10.0.3.10:30080").task_cha().remote()
 
 
     xns=[1,2,3,4]

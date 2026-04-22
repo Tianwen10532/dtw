@@ -48,6 +48,11 @@ spec:
                 printf "%s" "$SCRIPT" > "actorserve.py";
                 
                 ulimit -n 65536; echo head; $KUBERAY_GEN_RAY_START_CMD
+            env:
+            - name: NODE_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.hostIP
             ports:
             - containerPort: 6379
               name: gcs
@@ -83,7 +88,11 @@ spec:
             resources:
               requests:
                 cpu: "1"{worker_gpu_requests}{worker_gpu_limits}
-                
+            env:
+            - name: NODE_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.hostIP    
   runtimeEnvYAML: |
     pip:
       # - grpcio==1.75.1 
@@ -129,6 +138,11 @@ spec:
 
         python -m pip install --no-cache-dir git+https://github.com/Tianwen10532/dtw.git;
         ulimit -n 65536; python actorserve.py
+    env:
+    - name: NODE_IP
+      valueFrom:
+        fieldRef:
+          fieldPath: status.hostIP
     ports:
     - containerPort: 50051
       name: invoke
